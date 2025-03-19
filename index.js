@@ -308,6 +308,9 @@ loginFormLoginBtn.addEventListener("click", (e) => {
   render();
 });
 
+const cleanInputValue = (inputValue) =>
+  inputValue.trim()[0].toUpperCase() + inputValue.slice(1);
+
 const addTask = function (task) {
   currentAccount.taskList = [...currentAccount.taskList, task];
 };
@@ -316,7 +319,7 @@ const handleAddTask = function () {
   const taskInputValue = taskInput.value;
   if (!taskInputValue.trim()) return;
 
-  const text = taskInputValue.trim()[0].toUpperCase() + taskInputValue.slice(1);
+  const text = cleanInputValue(taskInputValue);
 
   addTask(createTask(text));
   taskInput.value = "";
@@ -355,3 +358,78 @@ const handleDeleteTask = function (taskId) {
   saveAccounts();
   render();
 };
+
+const getTask = (taskId) =>
+  currentAccount.taskList.find((t) => t.id === Number(taskId));
+
+const handleEditTask = function (taskId) {
+  const editTaskInputValue = editTaskInput.value;
+  if (!editTaskInputValue.trim()) return;
+
+  const editedText = cleanInputValue(editTaskInputValue);
+
+  const task = getTask(taskId);
+
+  task.task = editedText;
+  saveAccounts();
+};
+
+const toggleEditModal = function () {
+  if (overlay.classList.contains("active")) {
+    overlay.classList.remove("active");
+    editTaskContainer.classList.remove("active");
+    closeBtn.classList.remove("active");
+  } else {
+    overlay.classList.add("active");
+    editTaskContainer.classList.add("active");
+    closeBtn.classList.add("active");
+  }
+};
+
+const clearCompletedTasks = function () {
+  currentAccount.taskList = currentAccount.taskList.filter(
+    (task) => task.status === "pending",
+  );
+};
+
+clearBtn.addEventListener("click", () => {
+  clearCompletedTasks();
+  render();
+});
+
+taskListContainer.addEventListener("click", (e) => {
+  const target = e.target;
+  if (!target.classList.contains("buttons-container-btn")) return;
+
+  const taskContainer = target.closest(".task-container");
+  const taskId = taskContainer.dataset.taskId;
+  const task = getTask(taskId);
+
+  if (target.classList.contains("toggle-btn")) {
+    toggleTaskStatus(task);
+  } else if (target.classList.contains("delete-btn")) {
+    handleDeleteTask(taskId);
+  } else if (target.classList.contains("edit-btn")) {
+    toggleEditModal();
+    editTaskInput.value = task.task;
+    editTaskContainer.dataset.editId = taskId;
+  }
+});
+
+const getTaskId = () => editTaskContainer.dataset.editId;
+
+okBtn.addEventListener("click", () => {
+  const taskId = getTaskId();
+  handleEditTask(taskId);
+  toggleEditModal();
+  render();
+});
+
+editTaskInput.addEventListener("keydown", (e) => {
+  if (e.key === "Enter") {
+    const taskId = getTaskId();
+    handleEditTask(taskId);
+    toggleEditModal();
+    render();
+  }
+});
